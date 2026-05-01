@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rock Paper Scissors</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="game-box">
+        <h1>Rock Paper Scissors</h1>
+        <p>Play 3 rounds. Highest points wins.</p>
+
+        <div class="scoreboard">
+            <div>Player Score: <span id="playerScore">0</span></div>
+            <div>Computer Score: <span id="computerScore">0</span></div>
+            <div>Rounds Left: <span id="roundsLeft">3</span></div>
+        </div>
+
+        <div class="buttons">
+            <button onclick="playGame('rock')">Rock</button>
+            <button onclick="playGame('paper')">Paper</button>
+            <button onclick="playGame('scissors')">Scissors</button>
+        </div>
+
+        <h2 id="result">Choose your move</h2>
+        <p id="finalWinner"></p>
+        <button id="restartBtn" onclick="restartGame()" style="display:none;">Play Again</button>
+    </div>
+
+    <script>
+        let playerScore = 0;
+        let computerScore = 0;
+        let roundsLeft = 3;
+        let gameOver = false;
+
+        async function playGame(choice) {
+            if (gameOver) return;
+
+            const response = await fetch("/play", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ user: choice })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                document.getElementById("result").innerText = data.error;
+                return;
+            }
+
+            if (data.winner === "user") {
+                playerScore++;
+                document.getElementById("result").innerText = `You chose ${data.user}, computer chose ${data.computer}. You win this round!`;
+            } else if (data.winner === "computer") {
+                computerScore++;
+                document.getElementById("result").innerText = `You chose ${data.user}, computer chose ${data.computer}. Computer wins this round!`;
+            } else {
+                document.getElementById("result").innerText = `You chose ${data.user}, computer chose ${data.computer}. It's a tie!`;
+            }
+
+            roundsLeft--;
+
+            document.getElementById("playerScore").innerText = playerScore;
+            document.getElementById("computerScore").innerText = computerScore;
+            document.getElementById("roundsLeft").innerText = roundsLeft;
+
+            if (roundsLeft === 0) {
+                gameOver = true;
+                if (playerScore > computerScore) {
+                    document.getElementById("finalWinner").innerText = "You won the game!";
+                } else if (computerScore > playerScore) {
+                    document.getElementById("finalWinner").innerText = "Computer won the game!";
+                } else {
+                    document.getElementById("finalWinner").innerText = "The game is a tie!";
+                }
+                document.getElementById("restartBtn").style.display = "inline-block";
+            }
+        }
+
+        function restartGame() {
+            playerScore = 0;
+            computerScore = 0;
+            roundsLeft = 3;
+            gameOver = false;
+
+            document.getElementById("playerScore").innerText = playerScore;
+            document.getElementById("computerScore").innerText = computerScore;
+            document.getElementById("roundsLeft").innerText = roundsLeft;
+            document.getElementById("result").innerText = "Choose your move";
+            document.getElementById("finalWinner").innerText = "";
+            document.getElementById("restartBtn").style.display = "none";
+        }
+    </script>
+</body>
+</html>
